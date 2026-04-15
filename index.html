@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CRUD Productos — API JWT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-bottom: 1px solid #334155;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    header h1 { font-size: 1.3rem; color: #38bdf8; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    #user-badge {
+      font-size: 0.8rem; padding: 6px 14px; border-radius: 20px;
+      background: #1e293b; border: 1px solid #22c55e; color: #22c55e;
+    }
+    #btn-logout {
+      font-size: 0.78rem; padding: 6px 14px; border-radius: 20px;
+      background: #1e293b; border: 1px solid #ef4444; color: #ef4444;
+      cursor: pointer; transition: background 0.2s;
+    }
+    #btn-logout:hover { background: #450a0a; }
+
+    .container { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - 57px); }
+
+    /* ── PANEL IZQUIERDO ── */
+    .sidebar {
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .card h2 {
+      font-size: 0.85rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card h2 span { font-size: 1rem; }
+
+    label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px; margin-top: 10px; }
+    input, select {
+      width: 100%; padding: 8px 10px; border-radius: 6px;
+      background: #1e293b; border: 1px solid #475569;
+      color: #e2e8f0; font-size: 0.85rem; outline: none;
+    }
+    input:focus, select:focus { border-color: #38bdf8; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    .btn {
+      width: 100%; padding: 9px; border-radius: 6px; border: none;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      margin-top: 12px; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-blue  { background: #2563eb; color: #fff; }
+    .btn-green { background: #16a34a; color: #fff; }
+    .btn-yellow{ background: #d97706; color: #fff; }
+    .btn-red   { background: #dc2626; color: #fff; }
+    .btn-gray  { background: #475569; color: #fff; }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .btn-row .btn { margin-top: 0; }
+
+    /* filtros */
+    .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .filter-row label { grid-column: span 2; }
+
+    /* ── PANEL DERECHO ── */
+    .main { display: flex; flex-direction: column; overflow: hidden; }
+
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: 1px solid #334155;
+      background: #1e293b;
+    }
+    .tab {
+      padding: 12px 20px; font-size: 0.85rem; cursor: pointer;
+      border-bottom: 2px solid transparent; color: #94a3b8;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: #e2e8f0; }
+    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+    .tab-content { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+    .tab-content.active { display: block; overflow-y: auto; }
+
+    /* tabla productos */
+    .toolbar {
+      display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;
+    }
+    .toolbar input, .toolbar select {
+      width: auto; flex: 1; min-width: 120px;
+    }
+    .toolbar .btn { width: auto; margin-top: 0; padding: 8px 16px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th {
+      background: #1e293b; padding: 10px 12px; text-align: left;
+      color: #94a3b8; font-weight: 600; border-bottom: 1px solid #334155;
+      white-space: nowrap;
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e293b; vertical-align: middle; }
+    tr:hover td { background: #1e293b; }
+
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-activo   { background: #14532d; color: #4ade80; }
+    .badge-inactivo { background: #450a0a; color: #f87171; }
+    .badge-stock-ok   { background: #1e3a5f; color: #7dd3fc; }
+    .badge-stock-bajo { background: #431407; color: #fb923c; }
+    .badge-stock-cero { background: #450a0a; color: #f87171; }
+
+    .qty-input {
+      width: 52px; padding: 3px 6px; border-radius: 4px;
+      background: #0f172a; border: 1px solid #475569;
+      color: #e2e8f0; font-size: 0.8rem; text-align: center;
+    }
+
+    .action-btn {
+      padding: 4px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: 600;
+    }
+    .action-btn.edit   { background: #1d4ed8; color: #fff; margin-right: 4px; }
+    .action-btn.delete { background: #b91c1c; color: #fff; }
+
+    .pagination {
+      display: flex; gap: 8px; align-items: center; margin-top: 16px;
+      font-size: 0.82rem; color: #94a3b8;
+    }
+    .pagination button {
+      padding: 5px 12px; border-radius: 4px; border: 1px solid #475569;
+      background: #1e293b; color: #e2e8f0; cursor: pointer;
+    }
+    .pagination button:hover { border-color: #38bdf8; color: #38bdf8; }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+    /* log de respuestas */
+    #response-log { display: flex; flex-direction: column; gap: 12px; }
+    .log-entry {
+      border-radius: 8px; border: 1px solid #334155; overflow: hidden;
+    }
+    .log-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; background: #1e293b; font-size: 0.8rem;
+    }
+    .log-method {
+      font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+    }
+    .method-POST   { background: #166534; color: #4ade80; }
+    .method-GET    { background: #1e40af; color: #93c5fd; }
+    .method-PUT    { background: #92400e; color: #fcd34d; }
+    .method-DELETE { background: #7f1d1d; color: #fca5a5; }
+
+    .log-status {
+      font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+    }
+    .status-2xx { background: #14532d; color: #4ade80; }
+    .status-4xx { background: #7f1d1d; color: #fca5a5; }
+    .status-5xx { background: #450a0a; color: #f87171; }
+
+    .log-path { color: #e2e8f0; flex: 1; }
+    .log-time { color: #64748b; font-size: 0.75rem; }
+    .log-body { padding: 12px 14px; background: #0f172a; }
+    pre {
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; color: #a5f3fc;
+    }
+
+    /* checklist */
+    .checklist { display: flex; flex-direction: column; gap: 8px; }
+    .check-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border-radius: 8px;
+      background: #0f172a; border: 1px solid #1e293b; font-size: 0.82rem;
+    }
+    .check-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .check-item.pass { border-color: #166534; }
+    .check-item.fail { border-color: #7f1d1d; }
+    .check-item.pending { border-color: #334155; }
+    .check-title { font-weight: 600; color: #e2e8f0; }
+    .check-desc  { color: #94a3b8; font-size: 0.78rem; margin-top: 2px; }
+
+    .empty-state {
+      text-align: center; padding: 40px; color: #475569;
+    }
+    .empty-state p { font-size: 0.9rem; margin-top: 8px; }
+
+    /* modal edición */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1e293b; border: 1px solid #475569;
+      border-radius: 12px; padding: 24px; width: 420px; max-width: 95vw;
+    }
+    .modal h3 { color: #38bdf8; margin-bottom: 16px; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-footer .btn { margin-top: 0; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 CRUD Productos — API JWT</h1>
+  <div class="header-right">
+    <div id="user-badge">👤 <span id="user-name">cargando...</span></div>
+    <button id="btn-logout" onclick="logout()">🚪 Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <!-- CREAR PRODUCTO -->
+    <div class="card">
+      <h2><span>➕</span> Crear Producto</h2>
+      <label>Nombre</label>
+      <input id="p-nombre" type="text" placeholder="Coca-Cola 600ml" />
+      <label>Descripción</label>
+      <input id="p-descripcion" type="text" placeholder="Bebida gaseosa" />
+      <label>Subcategoría</label>
+      <input id="p-subcategoria" type="text" placeholder="bebidas" />
+      <label>Precio</label>
+      <input id="p-precio" type="number" placeholder="2500" />
+      <label>Cantidad</label>
+      <input id="p-cantidad" type="number" placeholder="10000" min="1" />
+      <label>Estado</label>
+      <select id="p-estado">
+        <option value="activo">activo</option>
+        <option value="inactivo">inactivo</option>
+      </select>
+      <button class="btn btn-green" onclick="crearProducto()">Crear producto (POST)</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="card">
+      <h2><span>🔍</span> Filtros</h2>
+      <label>Nombre (parcial)</label>
+      <input id="f-nombre" type="text" placeholder="ej: coca" oninput="listarProductos()"/>
+      <label>Subcategoría</label>
+      <input id="f-subcategoria" type="text" placeholder="ej: bebidas" oninput="listarProductos()"/>
+      <label>Estado</label>
+      <select id="f-estado" onchange="listarProductos()">
+        <option value="">— todos —</option>
+        <option value="activo">activo</option>
+        <option value="inactivo">inactivo</option>
+      </select>
+      <label style="margin-top:10px">Resultados por página</label>
+      <select id="f-limit" onchange="listarProductos()">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+      <button class="btn btn-gray" style="margin-top:10px" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+    </div>
+
+
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('tabla')">📋 Productos</div>
+      <div class="tab" onclick="switchTab('log')">📡 Respuestas API</div>
+    </div>
+
+    <!-- TAB: TABLA -->
+    <div id="tab-tabla" class="tab-content active">
+      <div id="product-list">
+        <div class="empty-state">
+          <div style="font-size:3rem">🔒</div>
+          <p>Inicia sesión y haz clic en <strong>Aplicar filtros</strong> para ver los productos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: LOG -->
+    <div id="tab-log" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="color:#94a3b8;font-size:0.85rem">Últimas respuestas del servidor</span>
+        <button class="btn btn-gray" style="width:auto;margin-top:0;padding:6px 14px;font-size:0.8rem" onclick="clearLog()">Limpiar</button>
+      </div>
+      <div id="response-log">
+        <div class="empty-state">
+          <div style="font-size:3rem">📡</div>
+          <p>Las respuestas de la API aparecerán aquí</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <h3>✏️ Editar Producto</h3>
+    <input type="hidden" id="edit-id" />
+    <label>Nombre</label>
+    <input id="edit-nombre" type="text" />
+    <label>Descripción</label>
+    <input id="edit-descripcion" type="text" />
+    <label>Subcategoría</label>
+    <input id="edit-subcategoria" type="text" />
+    <label>Precio</label>
+    <input id="edit-precio" type="number" />
+    <label>Cantidad</label>
+    <input id="edit-cantidad" type="number" min="1" />
+    <label>Estado</label>
+    <select id="edit-estado">
+      <option value="activo">activo</option>
+      <option value="inactivo">inactivo</option>
+    </select>
+    <div class="modal-footer">
+      <button class="btn btn-yellow" style="flex:1" onclick="guardarEdicion()">Guardar (PUT)</button>
+      <button class="btn btn-gray" style="flex:1" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+const API = 'http://localhost:3000';
+
+// ─────────────────────────────────────────────
+// AUTENTICACIÓN — leer token de sessionStorage
+// ─────────────────────────────────────────────
+function checkAuth() {
+  if (!sessionStorage.getItem('token')) {
+    // Reemplazar en el historial para que el botón atrás no vuelva aquí
+    window.location.replace('/login.html');
+    return false;
+  }
+  return true;
+}
+
+// Verificar al cargar la página
+if (!checkAuth()) { /* redirigiendo */ }
+
+// Verificar también al volver con el botón atrás (página cacheada)
+window.addEventListener('pageshow', (e) => {
+  if (!sessionStorage.getItem('token')) {
+    window.location.replace('/login.html');
+  }
+});
+
+let token = sessionStorage.getItem('token');
+const usuarioGuardado = sessionStorage.getItem('usuario') || '';
+document.getElementById('user-name').textContent = usuarioGuardado;
+
+function logout() {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('usuario');
+  window.location.replace('/login.html');
+}
+
+// ─────────────────────────────────────────────
+// UTILIDADES
+// ─────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal-edit').classList.remove('open');
+}
+
+function clearLog() {
+  document.getElementById('response-log').innerHTML = `
+    <div class="empty-state"><div style="font-size:3rem">📡</div><p>Log limpiado</p></div>`;
+}
+
+function statusClass(code) {
+  if (code >= 200 && code < 300) return 'status-2xx';
+  if (code >= 400 && code < 500) return 'status-4xx';
+  return 'status-5xx';
+}
+
+function addLog(method, path, status, body) {
+  const log = document.getElementById('response-log');
+  const empties = log.querySelectorAll('.empty-state');
+  empties.forEach(e => e.remove());
+
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <div class="log-header">
+      <span class="log-method method-${method}">${method}</span>
+      <span class="log-path">${path}</span>
+      <span class="log-status ${statusClass(status)}">${status}</span>
+      <span class="log-time">${time}</span>
+    </div>
+    <div class="log-body">
+      <pre>${JSON.stringify(body, null, 2)}</pre>
+    </div>`;
+  log.insertBefore(entry, log.firstChild);
+
+  // Cambiar a tab log
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-log').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+}
+
+async function apiFetch(method, path, body = null, useToken = true) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (useToken && token) headers['Authorization'] = `Bearer ${token}`;
+
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  addLog(method, path, res.status, data);
+
+  // Si el token expiró, volver al login
+  if (res.status === 401 && useToken && data.error?.code !== 'USER_INACTIVE') {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('usuario');
+    window.location.href = '/login.html';
+    return { status: res.status, data };
+  }
+
+  return { status: res.status, data };
+}
+
+// ─────────────────────────────────────────────
+// LISTAR PRODUCTOS (cargar al inicio)
+// ─────────────────────────────────────────────
+let currentPage = 1;
+let currentLimit = 5;
+
+function limpiarFiltros() {
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-subcategoria').value = '';
+  document.getElementById('f-estado').value = '';
+  listarProductos();
+}
+
+async function listarProductos(page = 1) {
+  const nombre      = document.getElementById('f-nombre').value.trim();
+  const subcategoria = document.getElementById('f-subcategoria').value.trim();
+  const estado      = document.getElementById('f-estado').value;
+  const limit       = parseInt(document.getElementById('f-limit').value) || 10;
+
+  currentPage  = page;
+  currentLimit = limit;
+
+  const params = new URLSearchParams();
+  if (nombre)        params.set('nombre', nombre);
+  if (subcategoria)  params.set('subcategoria', subcategoria);
+  if (estado)        params.set('estado', estado);
+  params.set('page',  page);
+  params.set('limit', limit);
+
+  const { status, data } = await apiFetch('GET', `/productos?${params}`);
+
+  const container = document.getElementById('product-list');
+  if (status !== 200) {
+    container.innerHTML = `<div class="empty-state"><div style="font-size:2rem">❌</div><p>${JSON.stringify(data.error)}</p></div>`;
+    return;
+  }
+
+  const productos = data.data;
+  const pag = data.pagination;
+
+  if (!productos || productos.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div style="font-size:2rem">📭</div><p>No hay productos con esos filtros</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Nombre</th><th>Descripción</th>
+          <th>Subcategoría</th><th>Precio</th><th>Cantidad</th>
+          <th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${productos.map(p => `
+          <tr>
+            <td><strong>#${p.id}</strong></td>
+            <td>${p.nombre}</td>
+            <td style="color:#94a3b8">${p.descripcion}</td>
+            <td>${p.subcategoria}</td>
+            <td>$${p.precio.toLocaleString()}</td>
+            <td>${p.cantidad ?? 0}</td>
+            <td><span class="badge badge-${p.estado}">${p.estado}</span></td>
+            <td>
+              <button class="action-btn edit" onclick="abrirEdicion(${p.id})">Editar</button>
+              <button class="action-btn delete" onclick="eliminarProducto(${p.id})">Eliminar</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    ${pag ? `
+    <div class="pagination">
+      <button onclick="listarProductos(${pag.page - 1})" ${pag.page <= 1 ? 'disabled' : ''}>← Ant</button>
+      <span>Página <strong>${pag.page}</strong> de <strong>${pag.totalPages}</strong> · ${pag.total} productos</span>
+      <button onclick="listarProductos(${pag.page + 1})" ${pag.page >= pag.totalPages ? 'disabled' : ''}>Sig →</button>
+    </div>` : ''}`;
+
+  // Cambiar a tab tabla
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-tabla').classList.add('active');
+  document.querySelectorAll('.tab')[0].classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// CREAR PRODUCTO
+// ─────────────────────────────────────────────
+async function crearProducto() {
+  const body = {
+    nombre:          document.getElementById('p-nombre').value.trim(),
+    descripcion:     document.getElementById('p-descripcion').value.trim(),
+    subcategoria:    document.getElementById('p-subcategoria').value.trim(),
+    precio:          parseFloat(document.getElementById('p-precio').value),
+    cantidad:        parseFloat(document.getElementById('p-cantidad').value),
+    estado:          document.getElementById('p-estado').value,
+  };
+
+  const { status } = await apiFetch('POST', '/productos', body);
+  if (status === 201) {
+    // Limpiar formulario
+    ['p-nombre','p-descripcion','p-subcategoria','p-precio','p-cantidad'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    listarProductos();
+  }
+}
+
+// ─────────────────────────────────────────────
+// EDITAR PRODUCTO
+// ─────────────────────────────────────────────
+async function abrirEdicion(id) {
+  const { status, data } = await apiFetch('GET', `/productos/${id}`);
+  if (status !== 200) return;
+  const p = data.data;
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-nombre').value = p.nombre;
+  document.getElementById('edit-descripcion').value = p.descripcion;
+  document.getElementById('edit-subcategoria').value = p.subcategoria;
+  document.getElementById('edit-precio').value = p.precio;
+  document.getElementById('edit-cantidad').value = p.cantidad ?? 0;
+  document.getElementById('edit-estado').value = p.estado;
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+async function guardarEdicion() {
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    nombre:          document.getElementById('edit-nombre').value.trim(),
+    descripcion:     document.getElementById('edit-descripcion').value.trim(),
+    subcategoria:    document.getElementById('edit-subcategoria').value.trim(),
+    precio:          parseFloat(document.getElementById('edit-precio').value),
+    cantidad:        parseFloat(document.getElementById('edit-cantidad').value),
+    estado:          document.getElementById('edit-estado').value,
+  };
+  const { status } = await apiFetch('PUT', `/productos/${id}`, body);
+  if (status === 200) { closeModal(); listarProductos(); }
+}
+
+
+
+// ─────────────────────────────────────────────
+// ELIMINAR PRODUCTO
+// ─────────────────────────────────────────────
+async function eliminarProducto(id) {
+  if (!confirm(`¿Eliminar producto #${id}?`)) return;
+  await apiFetch('DELETE', `/productos/${id}`);
+  listarProductos();
+}
+
+listarProductos();
+</script>
+</body>
+</html>

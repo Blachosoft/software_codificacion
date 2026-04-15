@@ -1,0 +1,23 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Coca-Cola 600ml",
+      "descripcion": "Bebida gaseosa sabor cola",
+      "subcategoria": "bebidas",
+      "precio": 2500,
+      "cantidad": 10,
+      "estado": "activo"
+    },
+    {
+      "id": 2,
+      "nombre": "hola",
+      "descripcion": "COMO",
+      "subcategoria": "estas",
+      "precio": 12000,
+      "cantidad": 2,
+      "estado": "activo"
+    }
+  ],
+  "nextId": 3
+}

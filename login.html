@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar sesión</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bg-glow {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+    }
+    .bg-glow::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(56,189,248,0.08), transparent 70%);
+      top: -100px; left: -100px;
+    }
+    .bg-glow::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(99,102,241,0.07), transparent 70%);
+      bottom: -100px; right: -100px;
+    }
+
+    .card {
+      position: relative; z-index: 1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      font-size: 2.8rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .logo h1 {
+      font-size: 1.4rem;
+      color: #f1f5f9;
+      font-weight: 700;
+    }
+    .logo p {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .input-wrap .icon {
+      position: absolute;
+      left: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+    input {
+      width: 100%;
+      padding: 11px 12px 11px 38px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #38bdf8; }
+
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-login:hover { opacity: 0.9; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .alert {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      margin-bottom: 16px;
+      border: 1px solid;
+    }
+    .alert.error  { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+    .alert.info   { background: #172554; border-color: #1e3a8a; color: #93c5fd; }
+    .alert.show   { display: block; }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="card">
+    <div class="logo">
+      <span class="logo-icon">🛒</span>
+      <h1>Tienda en Línea</h1>
+      <p>API REST con autenticación JWT</p>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <label>Usuario</label>
+    <div class="input-wrap">
+      <span class="icon">👤</span>
+      <input id="inp-usuario" type="text" placeholder="Ingresa tu usuario" autocomplete="username"/>
+    </div>
+
+    <label>Contraseña</label>
+    <div class="input-wrap">
+      <span class="icon">🔒</span>
+      <input id="inp-password" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password"/>
+    </div>
+
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Iniciar sesión</button>
+
+
+  </div>
+
+<script>
+  const API = 'http://localhost:3000';
+
+  // Si ya hay token guardado, redirigir directo al CRUD
+  if (sessionStorage.getItem('token')) {
+    window.location.replace('/index.html');
+  }
+
+  // Si vuelven con el botón atrás después de hacer login
+  window.addEventListener('pageshow', () => {
+    if (sessionStorage.getItem('token')) {
+      window.location.replace('/index.html');
+    }
+  });
+
+  function showAlert(msg, type = 'error') {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className = `alert ${type} show`;
+  }
+
+  function hideAlert() {
+    document.getElementById('alert').className = 'alert';
+  }
+
+  // Permitir login con Enter
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogin() {
+    hideAlert();
+    const usuario  = document.getElementById('inp-usuario').value.trim();
+    const password = document.getElementById('inp-password').value.trim();
+
+    if (!usuario || !password) {
+      showAlert('Ingresa usuario y contraseña');
+      return;
+    }
+
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+
+    try {
+      const res  = await fetch(`${API}/auth`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ usuario, password })
+      });
+      const data = await res.json();
+
+      if (res.status === 200) {
+        sessionStorage.setItem('token',   data.data.access_token);
+        sessionStorage.setItem('usuario', usuario);
+        showAlert('Acceso concedido, redirigiendo...', 'info');
+        setTimeout(() => window.location.href = '/index.html', 600);
+      } else {
+        showAlert(data.error?.message || 'Credenciales incorrectas');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar sesión';
+      }
+    } catch {
+      showAlert('No se puede conectar con el servidor. ¿Está corriendo node app.js?');
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión';
+    }
+  }
+</script>
+</body>
+</html>

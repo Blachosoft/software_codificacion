@@ -1,0 +1,214 @@
+### Variables compartidas
+@baseUrl = http://localhost:3000
+
+# ═══════════════════════════════════════════════════
+# 1. LOGIN — Obtener el JWT
+# Después de ejecutar este request, {{token}} se llena
+# automáticamente con el access_token recibido.
+# ═══════════════════════════════════════════════════
+
+### Login con admin (activo)
+# @name login
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "usuario": "admin",
+  "password": "admin123"
+}
+
+@token = {{login.response.body.data.access_token}}
+
+### Login con estudiante (activo)
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "usuario": "estudiante",
+  "password": "est2025"
+}
+
+### Login con usuario inactivo (debe retornar 401, y el token luego dará 403)
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "usuario": "inactivo",
+  "password": "noactivo1"
+}
+
+### Login con credenciales incorrectas (debe retornar 401)
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "usuario": "admin",
+  "password": "wrongpassword"
+}
+
+# ═══════════════════════════════════════════════════
+# 2. CREAR PRODUCTOS (POST /productos)
+# ═══════════════════════════════════════════════════
+
+### Crear producto 1 — Coca-Cola
+POST {{baseUrl}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Coca-Cola 600ml",
+  "descripcion": "Bebida gaseosa sabor cola",
+  "subcategoria": "bebidas",
+  "precio": 2500,
+  "cantidad": 10,
+  "estado": "activo"
+}
+
+### Crear producto 2 — Pan integral
+POST {{baseUrl}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Pan integral",
+  "descripcion": "Pan integral tajado 500g",
+  "subcategoria": "panaderia",
+  "precio": 5800,
+  "cantidad": 5,
+  "estado": "activo"
+}
+
+### Crear producto 3 — Leche inactiva
+POST {{baseUrl}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Leche entera 1L",
+  "descripcion": "Leche entera pasteurizada",
+  "subcategoria": "lacteos",
+  "precio": 3200,
+  "cantidad": 3,
+  "estado": "inactivo"
+}
+
+### Crear producto con datos inválidos (debe retornar 400)
+POST {{baseUrl}}/productos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Producto mal",
+  "precio": -100,
+  "estado": "malo"
+}
+
+# ═══════════════════════════════════════════════════
+# 3. LISTAR PRODUCTOS (GET /productos)
+# ═══════════════════════════════════════════════════
+
+### Listar todos los productos
+GET {{baseUrl}}/productos
+Authorization: Bearer {{token}}
+
+### Filtrar por subcategoria
+GET {{baseUrl}}/productos?subcategoria=bebidas
+Authorization: Bearer {{token}}
+
+### Filtrar por estado
+GET {{baseUrl}}/productos?estado=activo
+Authorization: Bearer {{token}}
+
+### Buscar por nombre (coincidencia parcial)
+GET {{baseUrl}}/productos?nombre=coca
+Authorization: Bearer {{token}}
+
+### Filtros combinados
+GET {{baseUrl}}/productos?subcategoria=bebidas&estado=activo
+Authorization: Bearer {{token}}
+
+### Con paginación (página 1, 2 productos por página)
+GET {{baseUrl}}/productos?page=1&limit=2
+Authorization: Bearer {{token}}
+
+### Filtros + paginación
+GET {{baseUrl}}/productos?estado=activo&page=1&limit=2
+Authorization: Bearer {{token}}
+
+# ═══════════════════════════════════════════════════
+# 4. OBTENER PRODUCTO POR ID (GET /productos/:id)
+# ═══════════════════════════════════════════════════
+
+### Obtener producto con id 1
+GET {{baseUrl}}/productos/1
+Authorization: Bearer {{token}}
+
+### Obtener producto inexistente (debe retornar 404)
+GET {{baseUrl}}/productos/999
+Authorization: Bearer {{token}}
+
+# ═══════════════════════════════════════════════════
+# 5. ACTUALIZAR PRODUCTO (PUT /productos/:id)
+# ═══════════════════════════════════════════════════
+
+### Actualizar producto 1
+PUT {{baseUrl}}/productos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Coca-Cola 1.5L",
+  "descripcion": "Bebida gaseosa sabor cola tamaño familiar",
+  "subcategoria": "bebidas",
+  "precio": 4500,
+  "cantidad": 8,
+  "estado": "activo"
+}
+
+### Actualizar producto inexistente (debe retornar 404)
+PUT {{baseUrl}}/productos/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "No existe",
+  "descripcion": "Este producto no existe",
+  "subcategoria": "ninguna",
+  "precio": 100,
+  "cantidad": 1,
+  "estado": "activo"
+}
+
+# ═══════════════════════════════════════════════════
+# 6. ELIMINAR PRODUCTO (DELETE /productos/:id)
+# ═══════════════════════════════════════════════════
+
+### Eliminar producto con id 1
+DELETE {{baseUrl}}/productos/1
+Authorization: Bearer {{token}}
+
+### Intentar obtener el producto eliminado (debe retornar 404)
+GET {{baseUrl}}/productos/1
+Authorization: Bearer {{token}}
+
+### Eliminar producto inexistente (debe retornar 404)
+DELETE {{baseUrl}}/productos/999
+Authorization: Bearer {{token}}
+
+# ═══════════════════════════════════════════════════
+# 7. PRUEBAS DE SEGURIDAD JWT
+# ═══════════════════════════════════════════════════
+
+### Sin token (debe retornar 401 NO_TOKEN)
+GET {{baseUrl}}/productos
+
+### Token inválido (debe retornar 401 INVALID_TOKEN)
+GET {{baseUrl}}/productos
+Authorization: Bearer tokeninvalido123
+
+### Obtener token de usuario inactivo, luego usarlo aquí (debe retornar 403)
+# 1. Primero hace POST /auth con "inactivo" / "noactivo1"
+# 2. Copia el token de la respuesta
+# 3. Úsalo en el header abajo
+GET {{baseUrl}}/productos
+Authorization: Bearer TOKEN_DEL_USUARIO_INACTIVO

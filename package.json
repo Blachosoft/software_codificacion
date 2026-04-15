@@ -1,0 +1,17 @@
+{
+  "name": "crud-productos",
+  "version": "1.0.0",
+  "description": "API REST CRUD de Productos con autenticación JWT - Nivel 3 Avanzado",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
