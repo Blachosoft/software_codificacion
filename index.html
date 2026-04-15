@@ -83,30 +83,26 @@
     /* ── PANEL DERECHO ── */
     .main { display: flex; flex-direction: column; overflow: hidden; }
 
-    .tabs {
-      display: flex; gap: 0;
-      border-bottom: 1px solid #334155;
+    .tab-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* filtros toolbar */
+    .filter-bar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-bottom: 1px solid #334155;
       background: #1e293b;
     }
-    .tab {
-      padding: 12px 20px; font-size: 0.85rem; cursor: pointer;
-      border-bottom: 2px solid transparent; color: #94a3b8;
-      transition: all 0.2s;
+    .filter-bar input, .filter-bar select {
+      flex: 1; min-width: 130px; padding: 8px 10px; border-radius: 6px;
+      background: #0f172a; border: 1px solid #475569;
+      color: #e2e8f0; font-size: 0.83rem; outline: none;
     }
-    .tab:hover { color: #e2e8f0; }
-    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
-
-    .tab-content { display: none; flex: 1; overflow-y: auto; padding: 20px; }
-    .tab-content.active { display: block; overflow-y: auto; }
-
-    /* tabla productos */
-    .toolbar {
-      display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;
+    .filter-bar .btn-clear {
+      padding: 8px 14px; border-radius: 6px; border: 1px solid #475569;
+      background: #0f172a; color: #94a3b8; cursor: pointer; font-size: 0.8rem;
+      white-space: nowrap;
     }
-    .toolbar input, .toolbar select {
-      width: auto; flex: 1; min-width: 120px;
-    }
-    .toolbar .btn { width: auto; margin-top: 0; padding: 8px 16px; }
+    .filter-bar .btn-clear:hover { border-color: #ef4444; color: #ef4444; }
+    .filter-bar label { font-size: 0.75rem; color: #64748b; white-space: nowrap; }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     th {
@@ -148,38 +144,6 @@
     }
     .pagination button:hover { border-color: #38bdf8; color: #38bdf8; }
     .pagination button:disabled { opacity: 0.4; cursor: default; }
-
-    /* log de respuestas */
-    #response-log { display: flex; flex-direction: column; gap: 12px; }
-    .log-entry {
-      border-radius: 8px; border: 1px solid #334155; overflow: hidden;
-    }
-    .log-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 14px; background: #1e293b; font-size: 0.8rem;
-    }
-    .log-method {
-      font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
-    }
-    .method-POST   { background: #166534; color: #4ade80; }
-    .method-GET    { background: #1e40af; color: #93c5fd; }
-    .method-PUT    { background: #92400e; color: #fcd34d; }
-    .method-DELETE { background: #7f1d1d; color: #fca5a5; }
-
-    .log-status {
-      font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
-    }
-    .status-2xx { background: #14532d; color: #4ade80; }
-    .status-4xx { background: #7f1d1d; color: #fca5a5; }
-    .status-5xx { background: #450a0a; color: #f87171; }
-
-    .log-path { color: #e2e8f0; flex: 1; }
-    .log-time { color: #64748b; font-size: 0.75rem; }
-    .log-body { padding: 12px 14px; background: #0f172a; }
-    pre {
-      font-family: 'Cascadia Code', 'Consolas', monospace;
-      font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; color: #a5f3fc;
-    }
 
     /* checklist */
     .checklist { display: flex; flex-direction: column; gap: 8px; }
@@ -255,10 +219,14 @@
       <button class="btn btn-green" onclick="crearProducto()">Crear producto (POST)</button>
     </div>
 
+
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
     <!-- FILTROS -->
-    <div class="card">
-      <h2><span>🔍</span> Filtros</h2>
-      <label>Nombre (parcial)</label>
+    <div class="filter-bar">
+      <label>Nombre</label>
       <input id="f-nombre" type="text" placeholder="ej: coca" oninput="listarProductos()"/>
       <label>Subcategoría</label>
       <input id="f-subcategoria" type="text" placeholder="ej: bebidas" oninput="listarProductos()"/>
@@ -268,46 +236,22 @@
         <option value="activo">activo</option>
         <option value="inactivo">inactivo</option>
       </select>
-      <label style="margin-top:10px">Resultados por página</label>
-      <select id="f-limit" onchange="listarProductos()">
+      <label>Por página</label>
+      <select id="f-limit" onchange="listarProductos()" style="max-width:80px">
         <option value="5">5</option>
         <option value="10" selected>10</option>
         <option value="20">20</option>
         <option value="50">50</option>
       </select>
-      <button class="btn btn-gray" style="margin-top:10px" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+      <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar</button>
     </div>
 
-
-  </aside>
-
-  <!-- ── MAIN ── -->
-  <main class="main">
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('tabla')">📋 Productos</div>
-      <div class="tab" onclick="switchTab('log')">📡 Respuestas API</div>
-    </div>
-
-    <!-- TAB: TABLA -->
+    <!-- LISTA -->
     <div id="tab-tabla" class="tab-content active">
       <div id="product-list">
         <div class="empty-state">
           <div style="font-size:3rem">🔒</div>
           <p>Inicia sesión y haz clic en <strong>Aplicar filtros</strong> para ver los productos</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: LOG -->
-    <div id="tab-log" class="tab-content">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <span style="color:#94a3b8;font-size:0.85rem">Últimas respuestas del servidor</span>
-        <button class="btn btn-gray" style="width:auto;margin-top:0;padding:6px 14px;font-size:0.8rem" onclick="clearLog()">Limpiar</button>
-      </div>
-      <div id="response-log">
-        <div class="empty-state">
-          <div style="font-size:3rem">📡</div>
-          <p>Las respuestas de la API aparecerán aquí</p>
         </div>
       </div>
     </div>
@@ -393,44 +337,6 @@ function closeModal() {
   document.getElementById('modal-edit').classList.remove('open');
 }
 
-function clearLog() {
-  document.getElementById('response-log').innerHTML = `
-    <div class="empty-state"><div style="font-size:3rem">📡</div><p>Log limpiado</p></div>`;
-}
-
-function statusClass(code) {
-  if (code >= 200 && code < 300) return 'status-2xx';
-  if (code >= 400 && code < 500) return 'status-4xx';
-  return 'status-5xx';
-}
-
-function addLog(method, path, status, body) {
-  const log = document.getElementById('response-log');
-  const empties = log.querySelectorAll('.empty-state');
-  empties.forEach(e => e.remove());
-
-  const time = new Date().toLocaleTimeString();
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `
-    <div class="log-header">
-      <span class="log-method method-${method}">${method}</span>
-      <span class="log-path">${path}</span>
-      <span class="log-status ${statusClass(status)}">${status}</span>
-      <span class="log-time">${time}</span>
-    </div>
-    <div class="log-body">
-      <pre>${JSON.stringify(body, null, 2)}</pre>
-    </div>`;
-  log.insertBefore(entry, log.firstChild);
-
-  // Cambiar a tab log
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-log').classList.add('active');
-  document.querySelectorAll('.tab')[1].classList.add('active');
-}
-
 async function apiFetch(method, path, body = null, useToken = true) {
   const headers = { 'Content-Type': 'application/json' };
   if (useToken && token) headers['Authorization'] = `Bearer ${token}`;
@@ -440,7 +346,6 @@ async function apiFetch(method, path, body = null, useToken = true) {
 
   const res = await fetch(API + path, opts);
   const data = await res.json();
-  addLog(method, path, res.status, data);
 
   // Si el token expiró, volver al login
   if (res.status === 401 && useToken && data.error?.code !== 'USER_INACTIVE') {
@@ -519,7 +424,7 @@ async function listarProductos(page = 1) {
             <td><span class="badge badge-${p.estado}">${p.estado}</span></td>
             <td>
               <button class="action-btn edit" onclick="abrirEdicion(${p.id})">Editar</button>
-              <button class="action-btn delete" onclick="eliminarProducto(${p.id})">Eliminar</button>
+              <button class="action-btn delete" onclick="inactivarProducto(${p.id})" ${p.estado === 'inactivo' ? 'disabled style="opacity:0.4;cursor:default"' : ''}>Inactivar</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -530,12 +435,6 @@ async function listarProductos(page = 1) {
       <span>Página <strong>${pag.page}</strong> de <strong>${pag.totalPages}</strong> · ${pag.total} productos</span>
       <button onclick="listarProductos(${pag.page + 1})" ${pag.page >= pag.totalPages ? 'disabled' : ''}>Sig →</button>
     </div>` : ''}`;
-
-  // Cambiar a tab tabla
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-tabla').classList.add('active');
-  document.querySelectorAll('.tab')[0].classList.add('active');
 }
 
 // ─────────────────────────────────────────────
@@ -595,11 +494,14 @@ async function guardarEdicion() {
 
 
 // ─────────────────────────────────────────────
-// ELIMINAR PRODUCTO
+// INACTIVAR PRODUCTO
 // ─────────────────────────────────────────────
-async function eliminarProducto(id) {
-  if (!confirm(`¿Eliminar producto #${id}?`)) return;
-  await apiFetch('DELETE', `/productos/${id}`);
+async function inactivarProducto(id) {
+  if (!confirm(`¿Inactivar producto #${id}?`)) return;
+  const { status, data } = await apiFetch('GET', `/productos/${id}`);
+  if (status !== 200) return;
+  const p = data.data;
+  await apiFetch('PUT', `/productos/${id}`, { ...p, estado: 'inactivo' });
   listarProductos();
 }
 

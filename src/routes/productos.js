@@ -57,7 +57,7 @@ router.use(authMiddleware);
 // Lista todos los productos con filtros opcionales y paginación
 // ─────────────────────────────────────────────
 router.get('/', (req, res) => {
-  let resultado = [...productos];
+  let resultado = productos.filter(p => !p.deletedAt);
 
   const { subcategoria, estado, nombre, page, limit } = req.query;
 
@@ -112,7 +112,7 @@ router.get('/', (req, res) => {
 // ─────────────────────────────────────────────
 router.get('/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const producto = productos.find(p => p.id === id);
+  const producto = productos.find(p => p.id === id && !p.deletedAt);
 
   if (!producto) {
     return res.status(404).json({
@@ -167,7 +167,7 @@ router.post('/', (req, res) => {
 // ─────────────────────────────────────────────
 router.put('/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const index = productos.findIndex(p => p.id === id);
+  const index = productos.findIndex(p => p.id === id && !p.deletedAt);
 
   if (index === -1) {
     return res.status(404).json({
@@ -204,9 +204,9 @@ router.put('/:id', (req, res) => {
 // ─────────────────────────────────────────────
 router.delete('/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const index = productos.findIndex(p => p.id === id);
+  const producto = productos.find(p => p.id === id && !p.deletedAt);
 
-  if (index === -1) {
+  if (!producto) {
     return res.status(404).json({
       error: {
         code: 'PRODUCT_NOT_FOUND',
@@ -215,7 +215,7 @@ router.delete('/:id', (req, res) => {
     });
   }
 
-  productos.splice(index, 1);
+  producto.deletedAt = new Date().toISOString();
   save();
 
   return res.status(200).json({ data: { message: 'Producto eliminado exitosamente' } });
